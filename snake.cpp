@@ -14,38 +14,39 @@ class Tools {
       int y;
     };
     
-    struct sprite {
-      char head;
-      char body;
-      char fruit;
-      char obstacle;
-      char hb;
-      char vb;
-      char cb;
-      char def;
+    struct dir {
+      int i = 0;
+      int f = 1;
+      bool equal(int d) {
+        return (i == d) || (f == d);
+      }
     };
     
-    static void input_setup() {
-      termios t;
-      tcgetattr(STDIN_FILENO, &t);
-      t.c_lflag &= ~(ICANON | ECHO);
-      tcsetattr(STDIN_FILENO, TCSANOW, &t);
-      fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
-    }
-
-    static char getch() {
-      char c;
-      if (read(STDIN_FILENO, &c, 1) > 0)
-          return c;
-      return 0;
-    }
+    struct sprite {
+      int fgc = 0;
+      int bgc = 0;
+      char c = ' ';
+      void print(int i = 1) {
+        cout << "\033[3" << fgc << "m" 
+             << "\033[4" << bgc << "m";
+        while(i-- > 0)
+          cout << c;
+        cout << "\033[0m";
+      }
+    };
+    
+    struct spriteSet {
+      sprite head;
+      sprite body;
+      sprite fruit;
+      sprite obstacle;
+      sprite wall;
+      sprite border;
+      sprite def;
+    };
     
     static void printC(char c, int color = 0) {
       cout << "\033[" << color << "m" << c << "\033[0m";
-    }
-    
-    static void printCC(char c, int color = 0) {
-      cout << "\033[" << color << "m" << c << c << "\033[0m";
     }
 
     static void printS(string s, int color = 0) {
@@ -66,6 +67,21 @@ class Tools {
     n7 = White
     */
     
+    static void input_setup() {
+      termios t;
+      tcgetattr(STDIN_FILENO, &t);
+      t.c_lflag &= ~(ICANON | ECHO);
+      tcsetattr(STDIN_FILENO, TCSANOW, &t);
+      fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+    }
+
+    static char getch() {
+      char c;
+      if (read(STDIN_FILENO, &c, 1) > 0)
+          return c;
+      return 0;
+    }
+    
     int random(int min, int max) {
         std::uniform_int_distribution<int> dist(min, max);
         return dist(gen);
@@ -77,11 +93,10 @@ class Snake : Tools {
     coord SIZE;
     coord head;
     coord fruit;
-    sprite s;
+    dir d;
+    spriteSet s;
     vector <coord> body;
     int len;
-    int dir;
-    int initDir;
     int score;
     bool game_over;
     
@@ -92,133 +107,18 @@ class Snake : Tools {
     Snake (int B, int H) :
       Snake (B, H, B/2, H/2, 1, 1) {}
       
-    Snake (int B, int H, int x, int y, int l, int d) :
+    Snake (int B, int H, 
+           int x, int y,
+           int l, int di) :
       SIZE{B, H},
       head{x, y},
       len{l},
-      initDir(d),
-      s{'O', 'o' , '0', '#', ' ', ' ', ' ', ' '}
+      d{di}
       {}
       
-    
-    void Draw() {
-    for(int i = 0; i < SIZE.y; i++) {
-        for(int j = 0; j < SIZE.x; j++) {
-
-            bool isHead = (i == head.y && j == head.x);
-            bool isBody = false;
-            bool isFruit = (i == fruit.y && j == fruit.x);
-
-            for(coord part : body) {
-                if(i == part.y && j == part.x) {
-                    isBody = true;
-                    break;
-                }
-            }
-
-            if(isHead)
-                printCC(s.head , 33);
-            else if(isBody) 
-                printCC(s.body, 34);
-            else if(isFruit)
-                printCC(s.fruit, 45);
-            else if((i == 0 && j == 0)
-                 || (i == 0 && j == SIZE.x - 1)
-                 || (i == SIZE.y - 1 && j == 0)
-                 || (i == SIZE.y - 1 && j == SIZE.x - 1))
-                printCC(s.cb, 42);
-            else if(i == 0 || i == SIZE.y - 1)
-                printCC(s.vb, 42);
-            else if(j == 0 || j == SIZE.x - 1)
-                printCC(s.hb, 42);
-            else
-                printCC(s.def, 47);
-        }
-
-        cout << '\n';
-    }
-}
-    
-    void Input() {
-      char input = getch();
-
-      if (input == 'w' && dir != 2 && initDir != 2){
-        dir = 1;
-      }
-      else if (input == 's' && dir != 1 && initDir != 1){
-        dir = 2;
-      }
-      else if (input == 'a' && dir != 4 && initDir != 4){
-        dir = 3;
-      }
-      else if (input == 'd' && dir != 3 && initDir != 3){
-        dir = 4;
-      }
-      else if(input == 'q')
-          GameOver();
-          
-    }
-    
-    void Logic() {
-      if(head.x <= 0
-      || head.y <= 0
-      || head.x >= SIZE.x-1
-      || head.y >= SIZE.y-1) {
-        GameOver();
-      }
-      for(coord parts: body){
-        if(parts.x == head.x
-        && parts.y == head.y)
-        GameOver();
-      }
-      if(head.x == fruit.x
-      && head.y == fruit.y) {
-        Eat();
-      }
-    }
-    
-    void Move() {
-      if(dir != 0){
-        initDir = 0;
-        body.insert(body.begin(), head);
-      }
-  
-      switch (dir) {
-        case 1 :
-          head.y--;
-          break;
-        case 2 :
-          head.y++;
-          break;
-        case 3 :
-          head.x--;
-          break;
-        case 4 :
-          head.x++;
-          break;
-      }
-      if (body.size() > len - 1)
-        body.pop_back();
-    }
-    
-    void Loop() {
-      Setup();
-      do{
-        cout << "\033[2J\033[H";
-        Input();
-        Move();
-        Logic();
-        Stats();
-        Draw();
-        usleep(200000);
-      } while(!game_over);
-    }
     void Setup() {
       input_setup();
-      game_over = false;
-      dir = 0;
-      score = 0;
-      switch(initDir) {
+      switch(d.i) {
         case 1:
           for (int i = 1; i < min(SIZE.y - head.y, len); i++) 
             body.push_back({head.x, head.y + i});
@@ -236,24 +136,144 @@ class Snake : Tools {
             body.push_back({head.x - i, head.y});
         break;
         default:
-          initDir = 1;
+          d.i = 1;
           Setup();
           return;
       }
+      game_over = false;
+      d.f = 0;
+      score = 0;
+      
+      s.head.c = 'O';
+      s.head.fgc = 3;
+      s.head.bgc = 0;
+      s.body.c = 'o';
+      s.body.fgc = 0;
+      s.body.bgc = 3;
+      s.fruit.c = ' ';
+      s.fruit.fgc = 1;
+      s.fruit.bgc = 1;
+      s.obstacle.c = '#';
+      s.obstacle.fgc = 0;
+      s.obstacle.bgc = 0;
+      s.wall.bgc = 7;
+      s.border.bgc = 5;
+      s.def.bgc = 2;
+      
       SpawnFruit();
     }
     
-    void GameOver() {
-      game_over = true;
-      usleep(300000);
+    void Input() {
+      char input = getch();
+
+      if (input == 'w' && !d.equal(2)){
+        d.f = 1;
+      }
+      else if (input == 's' && !d.equal(1)){
+        d.f = 2;
+      }
+      else if (input == 'a' && !d.equal(4)){
+        d.f = 3;
+      }
+      else if (input == 'd' && !d.equal(3)){
+        d.f = 4;
+      }
+      else if(input == 'q')
+          GameOver();
+          
+    }
+    
+    void Move() {
+      if(d.f != 0){
+        d.i = 0;
+        body.insert(body.begin(), head);
+      }
+  
+      switch (d.f) {
+        case 1 :
+          head.y--;
+          break;
+        case 2 :
+          head.y++;
+          break;
+        case 3 :
+          head.x--;
+          break;
+        case 4 :
+          head.x++;
+          break;
+      }
+      if (body.size() > len - 1)
+        body.pop_back();
+    }
+    
+    void Logic() {
+      if(head.x <= 1
+      || head.y <= 1
+      || head.x >= SIZE.x - 1
+      || head.y >= SIZE.y - 1) {
+        GameOver();
+      }
+      for(coord parts: body){
+        if(parts.x == head.x
+        && parts.y == head.y)
+        GameOver();
+      }
+      if(head.x == fruit.x
+      && head.y == fruit.y) {
+        Eat();
+      }
+    }
+  
+    void Stats() {
+      string scoreS = (game_over ? "FINAL SCORE : ": " SCORE : ") + to_string(score) + " ";
+      printS(scoreS, 44);
       cout << '\n';
-      printS("GAME OVER!", 41);
-      cout << "\n\n";
+    }
+    
+    void Draw() {
+    for(int i = 0; i <= SIZE.y; i++) {
+        for(int j = 0; j <= SIZE.x; j++) {
+
+            bool isHead = (i == head.y && j == head.x);
+            bool isBody = false;
+            bool isFruit = (i == fruit.y && j == fruit.x);
+
+            for(coord part : body) {
+                if(i == part.y && j == part.x) {
+                    isBody = true;
+                    break;
+                }
+            }
+
+            if(isHead)
+                s.head.print(2);
+            else if(isBody) 
+                s.body.print(2);
+            else if(isFruit)
+                s.fruit.print(2);
+            else if((i == 0 || i == SIZE.y)
+                 || (j == 0 || j == SIZE.x))
+                s.border.print(2);
+            else if((i == 1 || i == SIZE.y - 1)
+                 || (j == 1 || j == SIZE.x - 1))
+                s.wall.print(2);
+            else
+                s.def.print(2);
+        }
+        cout << '\n';
+      }
+    }
+    
+    void Eat() {
+      SpawnFruit();
+      len++;
+      score+=10;
     }
     
     void SpawnFruit() {
-      fruit.x = random(1, SIZE.x-2);
-      fruit.y = random(1, SIZE.y-2);
+      fruit.x = random(2, SIZE.x-2);
+      fruit.y = random(2, SIZE.y-2);
       
       if(fruit.x == head.x
       && fruit.y == head.y) {
@@ -269,21 +289,30 @@ class Snake : Tools {
       }
     }
     
-    void Eat() {
-      SpawnFruit();
-      len++;
-      score+=10;
+    void GameOver() {
+      game_over = true;
+      usleep(300000);
+      cout << '\n';
+      printS("GAME OVER!", 41);
+      cout << "\n\n";
     }
     
-    void Stats() {
-      string scoreS = (game_over ? "FINAL SCORE : ": " SCORE : ") + to_string(score) + " ";
-      printS(scoreS, 44);
-      cout << '\n';
+    void Loop() {
+      Setup();
+      do{
+        cout << "\033[2J\033[H";
+        Input();
+        Move();
+        Logic();
+        Stats();
+        Draw();
+        usleep(200000);
+      } while(!game_over);
     }
 };
 
 int main(){
-  Snake game = Snake(30,30,10,10,11, 1);
+  Snake game = Snake(30,30,10,10,11,1);
   //Snake game = Snake();
   game.Loop();
 }
