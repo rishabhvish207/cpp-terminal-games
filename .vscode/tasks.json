@@ -4,7 +4,7 @@
         {
             "label": "Run Current C++ File",
             "type": "shell",
-            "command": "g++ -std=c++17 -O2 \"${file}\" -o \"/tmp/${fileBasenameNoExtension}\" && kitty --single-instance=no --override remember_window_size=no --override initial_window_width=67c --override initial_window_height=40c \"/tmp/${fileBasenameNoExtension}\"",
+            "command": "g++ -std=c++17 -O2 \"${file}\" -o \"/tmp/${fileBasenameNoExtension}\" && kitty --single-instance=no --override remember_window_size=no --override initial_window_width=66c --override initial_window_height=37c \"/tmp/${fileBasenameNoExtension}\"",
             "problemMatcher": [
                 "$gcc"
             ],

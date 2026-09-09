@@ -347,7 +347,6 @@ class Snake : Tools {
     
     void Loop() {
       Setup();
-      SpawnObstacleX(1, 20,18);
       do{
         cout << "\033[2J\033[H";
         Input();
@@ -363,6 +362,8 @@ class Snake : Tools {
 int main(){
   //Snake game = Snake(30,30,10,10,11,3);
   Snake game = Snake();
+  //game.SpawnObstacleX(4, 9, 25);
+  //game.SpawnObstacleY(1, 17 , 4);
   game.Loop();
   usleep(3000000);
 }
