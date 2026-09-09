@@ -43,29 +43,27 @@ class Tools {
     static void printC(char c, int color = 0) {
       cout << "\033[" << color << "m" << c << "\033[0m";
     }
-    /*
-    30 = Black
-    31 = Red
-    32 = Green
-    33 = Yellow
-    34 = Blue
-    35 = Magenta
-    36 = Cyan
-    37 = White
-    */
     
+    static void printCC(char c, int color = 0) {
+      cout << "\033[" << color << "m" << c << c << "\033[0m";
+    }
+
     static void printS(string s, int color = 0) {
       cout << "\033[" << color << "m" << s << "\033[0m";
     }
+    
     /*
-    40 = Black
-    41 = Red
-    42 = Green
-    43 = Yellow
-    44 = Blue
-    45 = Magenta
-    46 = Cyan
-    47 = White
+    Text : n = 3
+    Lighter Text : n = 9
+    Background : n = 4
+    n0 = Black
+    n1 = Red
+    n2 = Green
+    n3 = Yellow
+    n4 = Blue
+    n5 = Magenta
+    n6 = Cyan
+    n7 = White
     */
     
     int random(int min, int max) {
@@ -99,69 +97,47 @@ class Snake : Tools {
       head{x, y},
       len{l},
       initDir(d),
-      s{'O', 'o' , '*', '#', '|', '-', '+', ' '}
+      s{'O', 'o' , '0', '#', ' ', ' ', ' ', ' '}
       {}
       
+    
     void Draw() {
-      for(int i = 0; i < SIZE.y; i++) {
+    for(int i = 0; i < SIZE.y; i++) {
         for(int j = 0; j < SIZE.x; j++) {
-          
-          bool drawn = false;
-          bool virtBody = false;
-          if(i == head.y && j == head.x) {
-              printC(s.head, 34);
-              drawn = true;
-          }
-          else {
-            bool leftM = false;
-            bool rightM = false;
-            bool midM = false;
+
+            bool isHead = (i == head.y && j == head.x);
+            bool isBody = false;
+            bool isFruit = (i == fruit.y && j == fruit.x);
+
             for(coord part : body) {
-              if(i == part.y) {
-                if(j == part.x || j == head.x) {
-                midM = true;
-              }
-              if(j == part.x + 1 || j == head.x + 1) {
-                rightM = true;
-              }
-              }
-              if(i == part.y && j == part.x) {
-                printC(s.body, 34);
-                drawn = true;
-                break;
-              }
+                if(i == part.y && j == part.x) {
+                    isBody = true;
+                    break;
+                }
             }
-            if(midM && (leftM || rightM)) virtBody = true;
-          }
-          
-          if(!drawn) {
-              if((i == 0 && j == 0)
-              || (i == 0 && j == SIZE.x - 1)
-              || (i == SIZE.y - 1 && j == 0)
-              || (i == SIZE.y - 1 && j == SIZE.x - 1))
-                  printC(s.cb, 42);
-              else if(i == 0 || i == SIZE.y - 1)
-                  printC(s.vb, 42);
-              else if(j == 0 || j == SIZE.x - 1)
-                  printC(s.hb, 42);
-              else if(i == fruit.y && j == fruit.x)
-                  printC(s.fruit, 35);
-              else
-                  printC(s.def, 47);
-          }
-          if(virtBody) {
-            printC(s.body, 44);
-          }
-          else if((i == 0 || i == SIZE.y - 1) && j != SIZE.x - 1)
-            printC(s.vb, 42);
-          else if(j != SIZE.x - 1)
-            printC(s.def, 47);
-          else
-            cout << ' ';
+
+            if(isHead)
+                printCC(s.head , 33);
+            else if(isBody) 
+                printCC(s.body, 34);
+            else if(isFruit)
+                printCC(s.fruit, 45);
+            else if((i == 0 && j == 0)
+                 || (i == 0 && j == SIZE.x - 1)
+                 || (i == SIZE.y - 1 && j == 0)
+                 || (i == SIZE.y - 1 && j == SIZE.x - 1))
+                printCC(s.cb, 42);
+            else if(i == 0 || i == SIZE.y - 1)
+                printCC(s.vb, 42);
+            else if(j == 0 || j == SIZE.x - 1)
+                printCC(s.hb, 42);
+            else
+                printCC(s.def, 47);
         }
-        cout << "\n";
-      }
+
+        cout << '\n';
     }
+}
     
     void Input() {
       char input = getch();
@@ -228,7 +204,7 @@ class Snake : Tools {
     void Loop() {
       Setup();
       do{
-        system("clear");
+        cout << "\033[2J\033[H";
         Input();
         Move();
         Logic();
@@ -271,7 +247,7 @@ class Snake : Tools {
       game_over = true;
       usleep(300000);
       cout << '\n';
-      printS("GAME OVER!", 45);
+      printS("GAME OVER!", 41);
       cout << "\n\n";
     }
     
